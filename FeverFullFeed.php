@@ -98,7 +98,7 @@ class FeverFullFeed {
 			if($xPathQuery) {
                 $fullText = $this->getItemFulltext($url, $xPathQuery);
 
-                if($fullText) {
+                if(trim($fullText)) {
 				    $item = $this->addFullTextToItem($item, $fullText);
                     $this->persistItem($item);
                 }
@@ -197,19 +197,28 @@ class FeverFullFeed {
     protected function getInnerHTML($node) {
         $innerHTML= '';
         $children = $node->childNodes;
-        foreach ($children as $child) {
-            $innerHTML .= $child->ownerDocument->saveXML( $child );
+
+        if(count($children)) {
+            foreach ($children as $child) {
+                $innerHTML .= $child->ownerDocument->saveXML( $child );
+            }
         }
 
         return $innerHTML;
     }
 
 
+
+    /**
+     * @param $url
+     * @return string
+     */
     protected function loadHTMLData($url) {
         $html = file_get_contents($url);
         return $html;
     }
 
+    
 
     /**
      * @param $item
