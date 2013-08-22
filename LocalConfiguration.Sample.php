@@ -34,5 +34,7 @@ $localConfiguration = array(
     'mysqlUser'     => '',
     'mysqlPassword' => '',
     'mysqlFeverDb'  => '',
+
+    'itemsPerRun'   => 10,
 )
 ?>

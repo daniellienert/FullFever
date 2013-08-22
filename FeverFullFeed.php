@@ -43,6 +43,11 @@ class FeverFullFeed {
 	*/
 	protected $mysqlConnection;
 
+    /**
+     * @var integer
+     */
+    protected $itemsPerRun = 10;
+
 
 	public function run() {
         $this->loadConfigs();
@@ -63,6 +68,8 @@ class FeverFullFeed {
         include __DIR__ . '/LocalConfiguration.php';
         include __DIR__ . '/FeedConfiguration.php';
 
+        $this->itemsPerRun = $localConfiguration['itemsPerRun'];
+
         $this->mysqlHost = $localConfiguration['mysqlHost'];
         $this->mysqlUser = $localConfiguration['mysqlUser'];
         $this->mysqlPassword = $localConfiguration['mysqlPassword'];
@@ -81,20 +88,25 @@ class FeverFullFeed {
 	protected function processArticles() {
 		$items = $this->getItemsToProcess();
 
+        $itemsInThisRun = 0;
+
 		foreach($items as $item) {
 
 			$url = $item['link'];
 			$xPathQuery = $this->getConfigForURL($url);
 
-			if($xPathQuery !== FALSE) {
+			if($xPathQuery) {
                 $fullText = $this->getItemFulltext($url, $xPathQuery);
 
                 if($fullText) {
 				    $item = $this->addFullTextToItem($item, $fullText);
                     $this->persistItem($item);
                 }
+
+                $itemsInThisRun++;
+                if($itemsInThisRun >= $this->itemsPerRun) return;
 			}
-		}
+        }
 	}
 
 
@@ -121,7 +133,6 @@ class FeverFullFeed {
 
         foreach($this->feedConfiguration as $urlRegex => $xPath) {
             if(preg_match($urlRegex, $url)) {
-                echo "FOUND Config For URL $url!!";
                 return $xPath;
             }
         }
@@ -154,7 +165,7 @@ class FeverFullFeed {
 
         if($xPathQuery) {
 
-            echo "GET FullText for " . $url . "\n $xPathQuery \n";
+            echo "GET FullText for $url .. ";
 
             $dom = new DOMDocument();
             $success = @$dom->loadHTML($this->loadHTMLData($url));
@@ -165,6 +176,8 @@ class FeverFullFeed {
                 $resultRows = $domXPath->query($xPathQuery);
 
                 $itemFullText = $this->getInnerHTML($resultRows->item(0));
+
+                echo " DONE.  \n";
 
                 return $itemFullText;
 
@@ -204,8 +217,6 @@ class FeverFullFeed {
     protected function persistItem($item) {
         $query = $this->mysqlConnection->prepare('UPDATE `fever_items` SET `description` = :description WHERE `id` = :id');
         $query->execute(array('description' => $item['description'], 'id' => $item['id']));
-
-        die('DONE');
     }
 
 }
