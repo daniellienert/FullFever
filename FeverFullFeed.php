@@ -105,7 +105,7 @@ class FeverFullFeed {
      */
     protected function addFullTextToItem(&$item, $fullText) {
         $description = $item['description'];
-        $newDescriptionPattern = '%s<!--FULLTEXT--><hr>%s';
+        $newDescriptionPattern = '%s<!--FULLTEXT--><hr><br/><br/>%s';
 
         $item['description'] = sprintf($newDescriptionPattern, $description, $fullText);
         return $item;
@@ -121,7 +121,7 @@ class FeverFullFeed {
 
         foreach($this->feedConfiguration as $urlRegex => $xPath) {
             if(preg_match($urlRegex, $url)) {
-                echo "FOUND Config For URL $u!!";
+                echo "FOUND Config For URL $url!!";
                 return $xPath;
             }
         }
