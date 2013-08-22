@@ -30,6 +30,6 @@
  */
 
 $feedConfiguration = array(
-    '/spiegel.de/' => '//*[@id="js-article-column"]',
-    '/reisedepeschen.de/' => '//*[@id="main"]/article',
+    '/www.spiegel.de/' => '//*[@id="js-article-column"]',
+    '/www.reisedepeschen.de/' => '//*[@id="main"]/article',
 );
