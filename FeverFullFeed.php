@@ -50,7 +50,7 @@ class FeverFullFeed {
 		$this->processArticles();
 	}
 
-    
+
 
     protected function loadConfigs() {
 
