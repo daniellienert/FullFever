@@ -196,6 +196,8 @@ class FeverFullFeed {
      */
     protected function getInnerHTML($node) {
         $innerHTML= '';
+
+        if(!$node instanceof DOMNode) return NULL;
         $children = $node->childNodes;
 
         if(count($children)) {
@@ -218,7 +220,7 @@ class FeverFullFeed {
         return $html;
     }
 
-    
+
 
     /**
      * @param $item
