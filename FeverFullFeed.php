@@ -164,7 +164,7 @@ class FeverFullFeed {
 
                 $resultRows = $domXPath->query($xPathQuery);
 
-                $itemFullText = $resultRows->item(0)->textContent;
+                $itemFullText = $this->getInnerHTML($resultRows->item(0));
 
                 return $itemFullText;
 
@@ -176,6 +176,20 @@ class FeverFullFeed {
         return FALSE;
 	}
 
+
+    /**
+     * @param $node
+     * @return string
+     */
+    protected function getInnerHTML($node) {
+        $innerHTML= '';
+        $children = $node->childNodes;
+        foreach ($children as $child) {
+            $innerHTML .= $child->ownerDocument->saveXML( $child );
+        }
+
+        return $innerHTML;
+    }
 
 
     protected function loadHTMLData($url) {
@@ -190,6 +204,8 @@ class FeverFullFeed {
     protected function persistItem($item) {
         $query = $this->mysqlConnection->prepare('UPDATE `fever_items` SET `description` = :description WHERE `id` = :id');
         $query->execute(array('description' => $item['description'], 'id' => $item['id']));
+
+        die('DONE');
     }
 
 }
