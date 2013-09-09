@@ -177,7 +177,7 @@ class FeverFullFeed {
 
                 $itemFullText = $this->getInnerHTML($resultRows->item(0));
 
-                echo " DONE.  \n";
+                echo sprintf("(%s Zeichen) DONE.  \n", strlen($itemFullText));
 
                 return $itemFullText;
 
