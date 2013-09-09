@@ -32,4 +32,5 @@
 $feedConfiguration = array(
     '/www.spiegel.de/' => '//*[@id="js-article-column"]',
     '/www.reisedepeschen.de/' => '//*[@id="main"]/article',
+    '/www.maclife.de/' => '//*[@id="center_left_content"]/div[1]/div/div[3]',
 );
