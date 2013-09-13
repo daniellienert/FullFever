@@ -49,10 +49,30 @@ class FeverFullFeed {
     protected $itemsPerRun = 10;
 
 
+    /**
+     * Cache already retrieved fullTexts
+     *
+     * @var bool
+     */
+    protected $useFullTextCache = TRUE;
+
+
+    /**
+     * @var FullTextCache
+     */
+    protected $fullTextCache;
+
+
+
 	public function run() {
+
+        if($this->useFullTextCache) $this->fullTextCache = FullTextCache::getInstance();
+
         $this->loadConfigs();
 		$this->openMySQLConnection();
 		$this->processArticles();
+
+        if($this->useFullTextCache) $this->fullTextCache->shutdown();
 	}
 
 
@@ -92,20 +112,27 @@ class FeverFullFeed {
 
 		foreach($items as $item) {
 
-			$url = $item['link'];
-			$xPathQuery = $this->getConfigForURL($url);
+            if($this->useFullTextCache && $this->fullTextCache->itemExists($item['uid'])) {
+                $item = $this->addFullTextToItem($item, $this->fullTextCache->get($item['uid']));
+                $this->persistItem($item);
+                echo "Set fullText for item " . $item['link'] . " from cache. \n";
+            } else {
+                $url = $item['link'];
+                $xPathQuery = $this->getConfigForURL($url);
 
-			if($xPathQuery) {
-                $fullText = $this->getItemFulltext($url, $xPathQuery);
+                if($xPathQuery) {
+                    $fullText = $this->getItemFulltextFromPage($url, $xPathQuery);
 
-                if(trim($fullText)) {
-				    $item = $this->addFullTextToItem($item, $fullText);
-                    $this->persistItem($item);
+                    if(trim($fullText)) {
+                        $item = $this->addFullTextToItem($item, $fullText);
+                        $this->persistItem($item);
+                        if($this->useFullTextCache) $this->fullTextCache->store($item['uid'], $fullText);
+                    }
+
+                    $itemsInThisRun++;
+                    if($itemsInThisRun >= $this->itemsPerRun) return;
                 }
-
-                $itemsInThisRun++;
-                if($itemsInThisRun >= $this->itemsPerRun) return;
-			}
+            }
         }
 	}
 
@@ -161,11 +188,11 @@ class FeverFullFeed {
      * @param $xPathQuery
      * @return bool|string
      */
-    protected function getItemFulltext($url, $xPathQuery) {
+    protected function getItemFulltextFromPage($url, $xPathQuery) {
 
         if($xPathQuery) {
 
-            echo "GET FullText for $url .. ";
+            echo "Retrieve FullText for $url .. ";
 
             $dom = new DOMDocument();
             $success = @$dom->loadHTML($this->loadHTMLData($url));
@@ -230,6 +257,95 @@ class FeverFullFeed {
         $query->execute(array('description' => $item['description'], 'id' => $item['id']));
     }
 
+}
+
+
+class FullTextCache {
+
+    /**
+     * @var array
+     */
+    protected $items = array();
+
+
+    /**
+     * @var string
+     */
+    protected $cacheFilePath = '';
+
+
+
+    /**
+     * @return FullTextCache
+     */
+    public static function getInstance() {
+        $cache = new self;
+        $cache->loadCache();
+        return $cache;
+    }
+
+
+
+    public function store($uid, $data) {
+        $this->items[$uid] = array('data' => $data, 'used' => TRUE);
+    }
+
+
+    public function get($uid) {
+        if(array_key_exists($uid, $this->items)) {
+            $this->items[$uid]['used'] = TRUE;
+            return $this->items[$uid]['data'];
+        }
+    }
+
+
+    /**
+     * @param $uid
+     * @return bool
+     */
+    public function itemExists($uid) {
+        return array_key_exists($uid, $this->items);
+    }
+
+
+
+    public function shutdown() {
+        $this->compact();
+        $this->save();
+    }
+
+    protected function __construct() {
+        $this->cacheFilePath = __DIR__ . '/FullText.cache';
+        $this->loadCache();
+    }
+
+
+
+    /**
+     * Load the cache data
+     */
+    protected function loadCache() {
+
+       if(file_exists($this->cacheFilePath) && is_readable($this->cacheFilePath) && filesize($this->cacheFilePath)) {
+           $serializedCacheData = file_get_contents($this->cacheFilePath);
+           $this->items = unserialize($serializedCacheData);
+       }
+    }
+
+
+    protected function compact() {
+        foreach($this->items as $key => $item) {
+            if(!$item['used']) {
+                unset($this->items[$key]);
+            }
+        }
+    }
+
+
+    protected function save() {
+        $result = file_put_contents($this->cacheFilePath, serialize($this->items));
+        if($result === FALSE) throw new Exception('Cache File ' . $this->cacheFilePath . ' was not writable.', 1379059123);
+    }
 }
 
 
