@@ -293,8 +293,8 @@ class feedConfig {
 
         $this->url = $url;
         $this->xPath = $configArray['xPath'];
-        $this->keepAbstract = $configArray['keepAbstract'];
-        $this->replace = $configArray['replace'];
+        if(array_key_exists('keepAbstract', $configArray)) $this->keepAbstract = $configArray['keepAbstract'];
+        if(array_key_exists('replace', $configArray)) $this->replace = $configArray['replace'];
     }
 
 
