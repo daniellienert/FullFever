@@ -118,13 +118,20 @@ class FeverFullFeed {
                 echo "Set fullText for item " . $item['link'] . " from cache. \n";
             } else {
                 $url = $item['link'];
-                $xPathQuery = $this->getConfigForURL($url);
+                $config = $this->getConfigForURL($url);
 
-                if($xPathQuery) {
-                    $fullText = $this->getItemFulltextFromPage($url, $xPathQuery);
+                if($config->getXPath()) {
+                    $fullText = $this->getItemFulltextFromPage($url, $config->getXPath());
 
                     if(trim($fullText)) {
-                        $item = $this->addFullTextToItem($item, $fullText);
+
+                        // Replace patterns in fulltext
+                        if(is_array($config->getReplace()) && count($config->getReplace()) == 2) {
+                            $replaceArray = $config->getReplace();
+                            $fullText = str_replace($replaceArray[0],$replaceArray[1], $fullText);
+                        }
+
+                        $item = $this->addFullTextToItem($item, $fullText, $config->getKeepAbstract());
                         $this->persistItem($item);
                         if($this->useFullTextCache) $this->fullTextCache->store($item['uid'], $fullText);
                     }
@@ -141,12 +148,14 @@ class FeverFullFeed {
     /**
      * @param $item
      * @param $fullText
+     * @param $keepAbstract
      */
-    protected function addFullTextToItem(&$item, $fullText) {
-        $description = $item['description'];
+    protected function addFullTextToItem(&$item, $fullText, $keepAbstract) {
+
+        $abstract = $keepAbstract ? $item['description'] : '';
         $newDescriptionPattern = '%s<!--FULLTEXT--><hr><br/><br/>%s';
 
-        $item['description'] = sprintf($newDescriptionPattern, $description, $fullText);
+        $item['description'] = sprintf($newDescriptionPattern, $abstract, $fullText);
         return $item;
     }
 
@@ -154,13 +163,13 @@ class FeverFullFeed {
 
     /**
      * @param $url
-     * @return string
+     * @return feedConfig
      */
     protected function getConfigForURL($url) {
 
-        foreach($this->feedConfiguration as $urlRegex => $xPath) {
+        foreach($this->feedConfiguration as $urlRegex => $config) {
             if(preg_match($urlRegex, $url)) {
-                return $xPath;
+                return new feedConfig($urlRegex, $config);
             }
         }
 
@@ -174,7 +183,7 @@ class FeverFullFeed {
      */
     protected function getItemsToProcess() {
 
-		$statement = "SELECT * FROM `fever_items` 
+		$statement = "SELECT * FROM `fever_items`
 						WHERE `read_on_time` = 0
 						AND description NOT like '%<!--FULLTEXT-->%'";
 
@@ -257,6 +266,61 @@ class FeverFullFeed {
         $query->execute(array('description' => $item['description'], 'id' => $item['id']));
     }
 
+}
+
+
+
+/**
+ * Class feedConfig
+ *
+ * Configuration Objects for Feed URLS
+ */
+class feedConfig {
+
+    protected $url;
+    protected $xPath;
+    protected $keepAbstract = FALSE;
+    protected $replace = NULL;
+
+
+    public function __construct($url, $configArray) {
+        if(!trim($url)) throw new Exception('No URL was given to construct config object');
+        if(!trim($configArray['xPath'])) throw new Exception('No xPath was given to retrieve fulltext');
+
+        $this->url = $url;
+        $this->xPath = $configArray['xPath'];
+        $this->keepAbstract = $configArray['keepAbstract'];
+        $this->replace = $configArray['replace'];
+    }
+
+
+    /**
+     * @return boolean
+     */
+    public function getKeepAbstract() {
+        return $this->keepAbstract;
+    }
+
+    /**
+     * @return null
+     */
+    public function getReplace() {
+        return $this->replace;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUrl() {
+        return $this->url;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getXPath() {
+        return $this->xPath;
+    }
 }
 
 

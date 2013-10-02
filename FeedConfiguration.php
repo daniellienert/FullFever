@@ -26,11 +26,19 @@
 /**
  * Feed Configuration Array:
  *  Key:    A Regex that has to match against the articles URL
- *  Value:  A XPath, defining the HTML section to retrieve
+ *  Value:  Array with the following keys:
+ *     xPath: A XPath, defining the HTML section to retrieve
+ *     keepAbstract: Keep the abstract and add the fullText or replace the abstract completely [Default: FALSE]
+ *     replace: array with from and to value to replace strings within the fulltext. First value represents search, second the replace value
  */
 
 $feedConfiguration = array(
-    '/www.spiegel.de/' => '//*[@id="js-article-column"]',
-    '/www.reisedepeschen.de/' => '//*[@id="main"]/article',
-    '/www.maclife.de/' => '//*[@id="center_left_content"]/div[1]/div/div[3]',
+    '/www.spiegel.de/' => array(
+        'xPath' => '//*[@id="js-article-column"]',
+        'keepAbstract' => TRUE,
+        'replace' => array()
+    ),
+    '/www.maclife.de/' => array(
+        'xPath' => '//*[@id="center_left_content"]/div[1]/div/div[3]'
+    )
 );
