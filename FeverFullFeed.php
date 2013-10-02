@@ -112,32 +112,36 @@ class FeverFullFeed {
 
 		foreach($items as $item) {
 
-            if($this->useFullTextCache && $this->fullTextCache->itemExists($item['uid'])) {
-                $item = $this->addFullTextToItem($item, $this->fullTextCache->get($item['uid']));
-                $this->persistItem($item);
-                echo "Set fullText for item " . $item['link'] . " from cache. \n";
-            } else {
-                $url = $item['link'];
-                $config = $this->getConfigForURL($url);
+            $url = $item['link'];
+            $feedConfig = $this->getConfigForURL($url);
 
-                if($config->getXPath()) {
-                    $fullText = $this->getItemFulltextFromPage($url, $config->getXPath());
+            if($feedConfig) {
 
-                    if(trim($fullText)) {
+                if($this->useFullTextCache && $this->fullTextCache->itemExists($item['uid'])) {
+                    $item = $this->addFullTextToItem($item, $this->fullTextCache->get($item['uid']), $feedConfig->getKeepAbstract());
+                    $this->persistItem($item);
+                    echo "Set fullText for item " . $item['link'] . " from cache. \n";
+                } else {
 
-                        // Replace patterns in fulltext
-                        if(is_array($config->getReplace()) && count($config->getReplace()) == 2) {
-                            $replaceArray = $config->getReplace();
-                            $fullText = str_replace($replaceArray[0],$replaceArray[1], $fullText);
+                    if($feedConfig->getXPath()) {
+                        $fullText = $this->getItemFulltextFromPage($url, $feedConfig->getXPath());
+
+                        if(trim($fullText)) {
+
+                            // Replace patterns in fulltext
+                            if(is_array($feedConfig->getReplace()) && count($feedConfig->getReplace()) == 2) {
+                                $replaceArray = $feedConfig->getReplace();
+                                $fullText = str_replace($replaceArray[0],$replaceArray[1], $fullText);
+                            }
+
+                            $item = $this->addFullTextToItem($item, $fullText, $feedConfig->getKeepAbstract());
+                            $this->persistItem($item);
+                            if($this->useFullTextCache) $this->fullTextCache->store($item['uid'], $fullText);
                         }
 
-                        $item = $this->addFullTextToItem($item, $fullText, $config->getKeepAbstract());
-                        $this->persistItem($item);
-                        if($this->useFullTextCache) $this->fullTextCache->store($item['uid'], $fullText);
+                        $itemsInThisRun++;
+                        if($itemsInThisRun >= $this->itemsPerRun) return;
                     }
-
-                    $itemsInThisRun++;
-                    if($itemsInThisRun >= $this->itemsPerRun) return;
                 }
             }
         }
