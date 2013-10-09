@@ -208,7 +208,8 @@ class FeverFullFeed {
             echo "Retrieve FullText for $url .. ";
 
             $dom = new DOMDocument();
-            $success = @$dom->loadHTML($this->loadHTMLData($url));
+            $htmlSource = $this->loadHTMLData($url);
+            $success = @$dom->loadHTML($htmlSource);
 
             if($success) {
                 $domXPath = new DOMXPath($dom);
@@ -217,7 +218,7 @@ class FeverFullFeed {
 
                 $itemFullText = $this->getInnerHTML($resultRows->item(0));
 
-                echo sprintf("(%s Zeichen) DONE.  \n", strlen($itemFullText));
+                echo sprintf("(Full Page %s Chars - Extracted %s Chars) DONE.  \n", strlen($htmlSource), strlen($itemFullText));
 
                 return $itemFullText;
 

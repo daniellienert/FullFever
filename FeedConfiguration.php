@@ -46,7 +46,7 @@ $feedConfiguration = array(
         'keepAbstract' => TRUE,
     ),
     '/www.heise.de/' => array(
-        'xPath' => '//*[@id="mitte_news"]/article/div[2]',
-        'keepAbstract' => FALSE,
+        'xPath' => '//*[@id="mitte_news"]',
+        'keepAbstract' => TRUE,
     ),
 );
