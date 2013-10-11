@@ -49,4 +49,12 @@ $feedConfiguration = array(
         'xPath' => '//*[@id="mitte_news"]',
         'keepAbstract' => TRUE,
     ),
+    '/www.aerzteblatt.de/' => array(
+        'xPath' => '//*[@id="newsContent"]',
+        'keepAbstract' => TRUE,
+    ),
+     '/www.sajonara.de/' => array(
+         'xPath' => '//*[@id="rumpf"]/div/div[1]/article/div[2]',
+         'keepAbstract' => FALSE,
+    ),
 );
