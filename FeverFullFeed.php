@@ -258,6 +258,9 @@ class FeverFullFeed {
      */
     protected function loadHTMLData($url) {
         $html = file_get_contents($url);
+        
+        $html = mb_convert_encoding($html, 'HTML-ENTITIES', "UTF-8");
+        
         return $html;
     }
 
